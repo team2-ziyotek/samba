@@ -1,0 +1,44 @@
+---
+  - name: install all initial packages
+    yum:
+      name: ['samba', 'samba-common', 'samba-client']
+      state: latest
+
+  - name: Add the user
+    user:
+      name: admin
+      comment: samba admin
+      
+  - name: Edit config file smb.conf
+    template:
+      src: smb.conf
+      dest: /etc/samba/smb.conf
+      mode: 0644
+
+
+  - name: Creates directory to share files through Samba
+    file:
+      path: /smbashare
+      state: directory
+      owner: admin
+      mode: 0775
+
+
+  - name: Configure Samba passwords for each user
+    shell: "printf '{{ item.passwd }}\n{{ item.passwd }}\n' | smbpasswd -a {{ item.name}}"
+    with_items:
+    - "{{ users }}"
+    tags: smbpasswd
+
+
+  - name: start and enable smb 
+    service:
+      name: smb
+      state: started
+      enabled: true
+
+  - name: start and enabale nmb
+    service: 
+      name: nmb
+      state: started
+      enabled: true
